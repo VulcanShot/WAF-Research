@@ -1,0 +1,41 @@
+{
+  "Name": "block-<cve-id>-<short-anchor>",
+  "Priority": 0,
+  "Action": { "Count": {} },
+  "VisibilityConfig": {
+    "SampledRequestsEnabled": true,
+    "CloudWatchMetricsEnabled": true,
+    "MetricName": "block<CveIdShortAnchor>"
+  },
+  "Statement": {
+    "AndStatement": {
+      "Statements": [
+        {
+          "ByteMatchStatement": {
+            "SearchString": "<entry-point-anchor>",
+            "FieldToMatch": { "UriPath": {} },
+            "TextTransformations": [{ "Priority": 0, "Type": "LOWERCASE" }],
+            "PositionalConstraint": "STARTS_WITH"
+          }
+        },
+        {
+          "RegexMatchStatement": {
+            "RegexString": "<structural-invariant-the-exploit-requires>",
+            "FieldToMatch": {
+              "JsonBody": {
+                "MatchPattern": { "All": {} },
+                "MatchScope": "VALUE",
+                "InvalidFallbackBehavior": "NO_MATCH",
+                "OversizeHandling": "CONTINUE"
+              }
+            },
+            "TextTransformations": [
+              { "Priority": 0, "Type": "URL_DECODE" },
+              { "Priority": 1, "Type": "LOWERCASE" }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
