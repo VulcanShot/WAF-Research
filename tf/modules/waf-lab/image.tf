@@ -1,17 +1,24 @@
+locals {
+  builds_image = var.build_context != null
+}
+
 resource "aws_ecr_repository" "lab" {
+  count        = local.builds_image ? 1 : 0
   name         = var.name
   force_delete = true
 }
 
 locals {
-  context_dir  = abspath("${path.root}/${var.build_context}")
-  dockerfile   = var.dockerfile != null ? abspath("${path.root}/${var.dockerfile}") : "${local.context_dir}/Dockerfile"
-  context_hash = substr(sha1(join("", [for f in fileset(local.context_dir, "**") : filesha256("${local.context_dir}/${f}")])), 0, 12)
-  registry     = split("/", aws_ecr_repository.lab.repository_url)[0]
-  image_uri    = "${aws_ecr_repository.lab.repository_url}:${local.context_hash}"
+  context_dir  = local.builds_image ? abspath("${path.root}/${var.build_context}") : ""
+  dockerfile   = !local.builds_image ? "" : (var.dockerfile != null ? abspath("${path.root}/${var.dockerfile}") : "${local.context_dir}/Dockerfile")
+  context_hash = local.builds_image ? substr(sha1(join("", [for f in fileset(local.context_dir, "**") : filesha256("${local.context_dir}/${f}")])), 0, 12) : ""
+  registry     = local.builds_image ? split("/", aws_ecr_repository.lab[0].repository_url)[0] : ""
+  image_uri    = local.builds_image ? "${aws_ecr_repository.lab[0].repository_url}:${local.context_hash}" : var.image_url
 }
 
 resource "terraform_data" "build_push" {
+  count = local.builds_image ? 1 : 0
+
   triggers_replace = {
     image_uri = local.image_uri
   }
