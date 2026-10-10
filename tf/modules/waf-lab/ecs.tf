@@ -52,6 +52,12 @@ resource "aws_ecs_task_definition" "app" {
           hostPort      = var.container_port
         }
       ]
+      environment = [
+        for name, value in var.environment_variables : {
+          name  = name
+          value = value
+        }
+      ]
     }
   ])
 

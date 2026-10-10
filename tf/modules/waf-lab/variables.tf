@@ -35,6 +35,12 @@ variable "image_url" {
   description = "Registry URL of a prebuilt image the task runs as-is, such as ghcr.io/owner/app:1.2.3. Set this instead of build_context; the registry must allow anonymous pulls."
 }
 
+variable "environment_variables" {
+  type        = map(string)
+  default     = {}
+  description = "Environment variables set on the running container. Stored in plaintext on the task definition."
+}
+
 variable "waf_rule_file" {
   type        = string
   description = "Raw AWS WAFv2 rule JSON file (a single Rule object), relative to the tf/ root module."
