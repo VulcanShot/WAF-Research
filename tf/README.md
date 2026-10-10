@@ -1,7 +1,8 @@
 # WAF lab TF harness
 
-Serves a vulnerable app (any local Dockerfile) on ECS Fargate behind an ALB, with
-an AWS WAFv2 Web ACL attached to the ALB. 
+Serves a vulnerable app (any local Dockerfile, or any prebuilt image pullable
+from a registry) on ECS Fargate behind an ALB, with an AWS WAFv2 Web ACL
+attached to the ALB.
 
 ```bash
 # Create
@@ -22,9 +23,12 @@ the live ALB DNS name at apply time.
 
 No `.tf` edits needed:
 
-1. Drop the vuln's Dockerfile (and build context)
+1. Drop the vuln's Dockerfile (and build context), or pick a prebuilt image to
+   pull.
 2. Drop its WAFv2 rule JSON (a single Rule object).
-3. Add `labs/<vuln>.tfvars`:
+3. Add `labs/<vuln>.tfvars` with exactly one image source.
+
+   Built here, pushed to a lab-owned ECR repository:
 
    ```hcl
    lab = {
@@ -32,6 +36,18 @@ No `.tf` edits needed:
      container_port    = <port>
      health_check_path = "/health"
      build_context     = "../<path>/to/dockerfile-dir"
+     waf_rule_file     = "../<path>/rule.json"
+   }
+   ```
+
+   Pulled from a registry, no local Docker needed:
+
+   ```hcl
+   lab = {
+     name              = "<vuln-id>"
+     container_port    = <port>
+     health_check_path = "/health"
+     image_url         = "ghcr.io/<owner>/<app>:<tag>"
      waf_rule_file     = "../<path>/rule.json"
    }
    ```
@@ -45,3 +61,9 @@ at once, use separate Terraform workspaces (`terraform workspace new <lab>`).
 
 - Set `permitted_ip_range` in the lab object to your public IP; the ALB security
   group only admits that range on port 80.
+- `build_context` and `image_url` are mutually exclusive; the apply fails if
+  neither or both are set. ECR, the image build and the push only exist for a
+  `build_context` lab.
+- `image_url` is pulled by the Fargate task, so the registry has to allow
+  anonymous pulls. Images on Docker Hub, GHCR and Quay qualify; a private
+  registry needs credentials the task definition does not carry.
