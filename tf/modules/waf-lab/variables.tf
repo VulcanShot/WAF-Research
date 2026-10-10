@@ -19,13 +19,20 @@ variable "health_check_path" {
 
 variable "build_context" {
   type        = string
-  description = "Docker build context directory, relative to the tf/ root module."
+  default     = null
+  description = "Docker build context directory, relative to the tf/ root module. Set this to build and push the image to a lab-owned ECR repository; leave null to run image_url instead."
 }
 
 variable "dockerfile" {
   type        = string
   default     = null
   description = "Dockerfile path relative to the tf/ root module. Defaults to <build_context>/Dockerfile."
+}
+
+variable "image_url" {
+  type        = string
+  default     = null
+  description = "Registry URL of a prebuilt image the task runs as-is, such as ghcr.io/owner/app:1.2.3. Set this instead of build_context; the registry must allow anonymous pulls."
 }
 
 variable "waf_rule_file" {

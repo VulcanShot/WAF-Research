@@ -7,6 +7,7 @@ module "lab" {
   health_check_path  = var.lab.health_check_path
   build_context      = var.lab.build_context
   dockerfile         = var.lab.dockerfile
+  image_url          = var.lab.image_url
   waf_rule_file      = var.lab.waf_rule_file
   permitted_ip_range = var.lab.permitted_ip_range
 }
