@@ -26,4 +26,9 @@ variable "lab" {
     condition     = var.lab.dockerfile == null || var.lab.build_context != null
     error_message = "dockerfile only applies to a locally built lab; it needs build_context."
   }
+
+  validation {
+    condition     = alltrue([for value in values(var.lab.environment_variables) : value != null])
+    error_message = "An environment variable set to null reaches ECS with no value at all, which is undefined behaviour. Write \"\" to declare one with an empty value."
+  }
 }
