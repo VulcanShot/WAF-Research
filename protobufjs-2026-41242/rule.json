@@ -12,7 +12,7 @@
       "Statements": [
         {
           "ByteMatchStatement": {
-            "SearchString": "replace_with_customer_protobuf_host",
+            "SearchString": "DEFAULT_HOST_GUARD",
             "FieldToMatch": { "SingleHeader": { "Name": "host" } },
             "TextTransformations": [
               { "Priority": 0, "Type": "LOWERCASE" }
@@ -38,15 +38,15 @@
                           }
                         },
                         "TextTransformations": [
-                          { "Priority": 0, "Type": "NONE" }
+                          { "Priority": 0, "Type": "JS_DECODE" }
                         ],
                         "PositionalConstraint": "EXACTLY"
                       }
                     },
                     {
                       "RegexMatchStatement": {
-                        "RegexString": "\\([^)]*\\)\\s*\\{",
-                        "FieldToMatch": {
+                        "RegexString": "(?s)\\((?:[^\"\\\\]|\\\\.)*\\).*\\{(?:[^\"\\\\]|\\\\.)*\\}",
+                        "FieldToMatch": { 
                           "JsonBody": {
                             "MatchPattern": { "All": {} },
                             "MatchScope": "KEY",
@@ -67,18 +67,17 @@
                 "AndStatement": {
                   "Statements": [
                     {
-                      "ByteMatchStatement": {
-                        "SearchString": "\"fields\"",
+                      "RegexMatchStatement": {
+                        "RegexString": "\"fields\"\\s*:",
                         "FieldToMatch": { "Body": { "OversizeHandling": "CONTINUE" } },
                         "TextTransformations": [
                           { "Priority": 0, "Type": "JS_DECODE" }
-                        ],
-                        "PositionalConstraint": "CONTAINS"
+                        ]
                       }
                     },
                     {
                       "RegexMatchStatement": {
-                        "RegexString": "\"(?:[^\"\\\\]|\\\\.)*\\((?:[^\"\\\\]|\\\\.)*\\)\\s*\\{(?:[^\"\\\\]|\\\\.)*\"\\s*:",
+                        "RegexString": "(?s)\"(?:[^\"\\\\]|\\\\.)*\\((?:[^\"\\\\]|\\\\.)*\\).*\\{(?:[^\"\\\\]|\\\\.)*\"\\s*:",
                         "FieldToMatch": { "Body": { "OversizeHandling": "CONTINUE" } },
                         "TextTransformations": [
                           { "Priority": 0, "Type": "JS_DECODE" },

@@ -1,0 +1,134 @@
+# Traffic corpus for CVE-2026-41242 (protobufjs type-name code injection)
+
+# App requires a fixed type `User`
+# Sink confirmation: throw new Error('SINK_REACHED')
+
+vuln_id: CVE-2026-41242
+
+flows:
+  - source: public_exploit
+    requests:
+      - label: "Basic PoC (Snyk)"
+        method: POST
+        route: /api/user/decode
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: '{"schema":{"nested":{"User":{"fields":{"id":{"type":"int32","id":1},"data":{"type":"Data(){throw new Error(''SINK_REACHED'')};function X","id":2}}},"Data(){throw new Error(''SINK_REACHED'')};function X":{"fields":{"content":{"type":"string","id":1}}}}},"data":"CAESBwoFaGVsbG8="}'
+        is_exploit: true
+
+      - label: "PoC adapted to upload"
+        method: POST
+        route: /api/user/decode/upload
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: "multipart/form-data; boundary=----pbupload" }
+        body: "------pbupload\r\nContent-Disposition: form-data; name=\"schema\"; filename=\"schema.json\"\r\nContent-Type: application/json\r\n\r\n{\"nested\":{\"User\":{\"fields\":{\"id\":{\"type\":\"int32\",\"id\":1},\"data\":{\"type\":\"Data(){throw new Error('SINK_REACHED')};function X\",\"id\":2}}},\"Data(){throw new Error('SINK_REACHED')};function X\":{\"fields\":{\"content\":{\"type\":\"string\",\"id\":1}}}}}\r\n------pbupload\r\nContent-Disposition: form-data; name=\"data\"\r\n\r\nCAESBwoFaGVsbG8=\r\n------pbupload--\r\n"
+        is_exploit: true
+
+  - source: generated_from_research
+    requests:
+      - label: "Unicode-escaped parenthesis"
+        method: POST
+        route: /api/user/decode
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: "{\"schema\":{\"nested\":{\"User\":{\"fields\":{\"id\":{\"type\":\"int32\",\"id\":1},\"data\":{\"type\":\"Data\\u0028\\u0029{throw new Error('SINK_REACHED')};function X\",\"id\":2}}},\"Data\\u0028\\u0029{throw new Error('SINK_REACHED')};function X\":{\"fields\":{\"content\":{\"type\":\"string\",\"id\":1}}}}},\"data\":\"CAESBwoFaGVsbG8=\"}"
+        is_exploit: true
+
+      - label: "Block-comment between ) and { : Data()/**/{...}"
+        method: POST
+        route: /api/user/decode
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: '{"schema":{"nested":{"User":{"fields":{"id":{"type":"int32","id":1},"data":{"type":"Data()/**/{throw new Error(''SINK_REACHED'')};function X","id":2}}},"Data()/**/{throw new Error(''SINK_REACHED'')};function X":{"fields":{"content":{"type":"string","id":1}}}}},"data":"CAESBwoFaGVsbG8="}'
+        is_exploit: true
+
+      - label: "Unicode-escaped parenthesis - attachment"
+        method: POST
+        route: /api/user/decode/upload
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: "multipart/form-data; boundary=----pbupload" }
+        body: "------pbupload\r\nContent-Disposition: form-data; name=\"schema\"; filename=\"schema.json\"\r\nContent-Type: application/json\r\n\r\n{\"nested\":{\"User\":{\"fields\":{\"id\":{\"type\":\"int32\",\"id\":1},\"data\":{\"type\":\"Data\\u0028\\u0029{throw new Error('SINK_REACHED')};function X\",\"id\":2}}},\"Data\\u0028\\u0029{throw new Error('SINK_REACHED')};function X\":{\"fields\":{\"content\":{\"type\":\"string\",\"id\":1}}}}}\r\n------pbupload\r\nContent-Disposition: form-data; name=\"data\"\r\n\r\nCAESBwoFaGVsbG8=\r\n------pbupload--\r\n"
+        is_exploit: true
+
+      - label: "Line-comment breakout: Data()//c\\n{...}"
+        method: POST
+        route: /api/user/decode
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: '{"schema":{"nested":{"User":{"fields":{"id":{"type":"int32","id":1},"data":{"type":"Data()//c\n{throw new Error(''SINK_REACHED'')};function X","id":2}}},"Data()//c\n{throw new Error(''SINK_REACHED'')};function X":{"fields":{"content":{"type":"string","id":1}}}}},"data":"CAESBwoFaGVsbG8="}'
+        is_exploit: true
+
+      - label: "NULL-byte between ) and { : Data()\\u0000{...}"
+        method: POST
+        route: /api/user/decode
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: "{\"schema\":{\"nested\":{\"User\":{\"fields\":{\"id\":{\"type\":\"int32\",\"id\":1},\"data\":{\"type\":\"Data()\\u0000{throw new Error('SINK_REACHED')};function X\",\"id\":2}}},\"Data()\\u0000{throw new Error('SINK_REACHED')};function X\":{\"fields\":{\"content\":{\"type\":\"string\",\"id\":1}}}}},\"data\":\"CAESBwoFaGVsbG8=\"}"
+        is_exploit: true
+
+      - label: "Gzip-compressed body (Content-Encoding: gzip)"
+        method: POST
+        route: /api/user/decode
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json, Content-Encoding: gzip }
+        body: "<<GZIP_OF_E1_JSON_BODY>>"
+        is_exploit: true
+
+      - label: "Attachment with the 'fields' marker unicode-escaped (\\u0066ields)"
+        method: POST
+        route: /api/user/decode/upload
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: "multipart/form-data; boundary=----pbupload" }
+        body: "------pbupload\r\nContent-Disposition: form-data; name=\"schema\"; filename=\"schema.json\"\r\nContent-Type: application/json\r\n\r\n{\"nested\":{\"User\":{\"\\u0066ields\":{\"id\":{\"type\":\"int32\",\"id\":1},\"data\":{\"type\":\"Data(){throw new Error('SINK_REACHED')};function X\",\"id\":2}}},\"Data(){throw new Error('SINK_REACHED')};function X\":{\"\\u0066ields\":{\"content\":{\"type\":\"string\",\"id\":1}}}}}\r\n------pbupload\r\nContent-Disposition: form-data; name=\"data\"\r\n\r\nCAESBwoFaGVsbG8=\r\n------pbupload--\r\n"
+        is_exploit: true
+
+      - label: "Idem as JSON body"
+        method: POST
+        route: /api/user/decode
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: "{\"schema\":{\"nested\":{\"User\":{\"\\u0066ields\":{\"id\":{\"type\":\"int32\",\"id\":1},\"data\":{\"type\":\"Data(){throw new Error('SINK_REACHED')};function X\",\"id\":2}}},\"Data(){throw new Error('SINK_REACHED')};function X\":{\"\\u0066ields\":{\"content\":{\"type\":\"string\",\"id\":1}}}}},\"data\":\"CAESBwoFaGVsbG8=\"}"
+        is_exploit: true
+
+      - label: "map value-type injection"
+        method: POST
+        route: /api/user/decode
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: '{"schema":{"nested":{"User":{"fields":{"id":{"type":"int32","id":1},"data":{"keyType":"string","type":"Data(){throw new Error(''SINK_REACHED'')};function X","id":2}}},"Data(){throw new Error(''SINK_REACHED'')};function X":{"fields":{"content":{"type":"string","id":1}}}}},"data":""}'
+        is_exploit: true
+
+  - source: client_traffic
+    # Legitimate traffic, some specific to the vulnapp, some others generic traffic to target any use of protobufjs in a web server
+    requests:
+      - label: "Valid User schema (legal identifier type names) via the JSON endpoint."
+        method: POST
+        route: /api/user/decode
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: '{"schema":{"nested":{"User":{"fields":{"id":{"type":"int32","id":1},"name":{"type":"string","id":2}}}}},"data":""}'
+        is_exploit: false
+
+      - label: "Valid User schema uploaded as a file (benign schema, attachment transport)."
+        method: POST
+        route: /api/user/decode/upload
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: "multipart/form-data; boundary=----pbupload" }
+        body: "------pbupload\r\nContent-Disposition: form-data; name=\"schema\"; filename=\"user.json\"\r\nContent-Type: application/json\r\n\r\n{\"nested\":{\"User\":{\"fields\":{\"id\":{\"type\":\"int32\",\"id\":1},\"name\":{\"type\":\"string\",\"id\":2}}}}}\r\n------pbupload\r\nContent-Disposition: form-data; name=\"data\"\r\n\r\n\r\n------pbupload--\r\n"
+        is_exploit: false
+
+      - label: "data-pipeline API — a JS snippet in a value plus a 'fields' key; must not block."
+        method: POST
+        route: /data-pipeline
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: '{"fields":["id","email"],"transform":"map(row){ return row.id }","enabled":true}'
+        is_exploit: false
+
+      - label: "GraphQL API — query value carries ') {' and a 'fields' key, all in values; must not block."
+        method: POST
+        route: /graphql
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: '{"query":"query($id:ID!){ user(id:$id){ name email } }","variables":{"id":"42","fields":["name","email"]}}'
+        is_exploit: false
