@@ -49,8 +49,15 @@ No `.tf` edits needed:
      health_check_path = "/health"
      image_url         = "ghcr.io/<owner>/<app>:<tag>"
      waf_rule_file     = "../<path>/rule.json"
+
+     environment_variables = {
+       UNSAFE_MODE = "1"
+     }
    }
    ```
+
+   `environment_variables` is optional on either shape, and is how you switch on
+   whatever configuration the vulnerable app needs to be reachable.
 
 4. `terraform apply -var-file=labs/<vuln>.tfvars`.
 
@@ -67,3 +74,9 @@ at once, use separate Terraform workspaces (`terraform workspace new <lab>`).
 - `image_url` is pulled by the Fargate task, so the registry has to allow
   anonymous pulls. Images on Docker Hub, GHCR and Quay qualify; a private
   registry needs credentials the task definition does not carry.
+- `environment_variables` reaches the running container only; it is not passed
+  to `docker build`. Values sit in plaintext in the task definition, the plan
+  output and the state file, so put only throwaway lab credentials there.
+- Changing `environment_variables` registers a new task definition revision and
+  redeploys the service. `apply` returns before the new task passes health
+  checks, so give it a minute or two.
