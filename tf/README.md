@@ -77,6 +77,11 @@ at once, use separate Terraform workspaces (`terraform workspace new <lab>`).
 - `environment_variables` reaches the running container only; it is not passed
   to `docker build`. Values sit in plaintext in the task definition, the plan
   output and the state file, so put only throwaway lab credentials there.
+- To declare a variable without giving it a value, set it to `""`. The variable
+  is then present in the container's environment and empty, which is what an app
+  testing for presence rather than content looks for. Leave it out of the map
+  entirely for the variable to be absent. `null` is rejected: ECS accepts a name
+  with no value but does not define what the container receives.
 - Changing `environment_variables` registers a new task definition revision and
   redeploys the service. `apply` returns before the new task passes health
   checks, so give it a minute or two.
