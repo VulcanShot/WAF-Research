@@ -17,6 +17,24 @@ variable "health_check_path" {
   default = "/"
 }
 
+variable "health_check_grace_period_seconds" {
+  type        = number
+  default     = null
+  description = "How long the service ignores load balancer health checks after a task starts. Covers a slow-booting app that would otherwise be cycled mid-startup."
+}
+
+variable "cpu_units" {
+  type        = number
+  default     = 256
+  description = "Fargate CPU units for the task; 1024 units is one vCPU."
+}
+
+variable "memory_mib" {
+  type        = number
+  default     = 512
+  description = "Fargate task memory in MiB. Which values are legal depends on cpu_units."
+}
+
 variable "build_context" {
   type        = string
   default     = null
