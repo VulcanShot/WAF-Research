@@ -1,0 +1,117 @@
+{
+  "Name": "CVE-2025-3248-langflow",
+  "Priority": 0,
+  "Action": {
+    "Block": {}
+  },
+  "VisibilityConfig": {
+    "SampledRequestsEnabled": true,
+    "CloudWatchMetricsEnabled": true,
+    "MetricName": "blockCve20253248LangflowValidateCodeExec"
+  },
+  "Statement": {
+    "AndStatement": {
+      "Statements": [
+        {
+          "ByteMatchStatement": {
+            "SearchString": "POST",
+            "FieldToMatch": {
+              "Method": {}
+            },
+            "TextTransformations": [
+              {
+                "Priority": 0,
+                "Type": "NONE"
+              }
+            ],
+            "PositionalConstraint": "EXACTLY"
+          }
+        },
+        {
+          "ByteMatchStatement": {
+            "SearchString": "/api/v1/validate/code",
+            "FieldToMatch": {
+              "UriPath": {}
+            },
+            "TextTransformations": [
+              {
+                "Priority": 0,
+                "Type": "NONE"
+              }
+            ],
+            "PositionalConstraint": "CONTAINS"
+          }
+        },
+        {
+          "OrStatement": {
+            "Statements": [
+              {
+                "RegexMatchStatement": {
+                  "RegexString": "(?m)^@[^\\n]*\\(",
+                  "FieldToMatch": {
+                    "JsonBody": {
+                      "MatchPattern": {
+                        "IncludedPaths": [
+                          "/code"
+                        ]
+                      },
+                      "MatchScope": "VALUE",
+                      "InvalidFallbackBehavior": "NO_MATCH",
+                      "OversizeHandling": "CONTINUE"
+                    }
+                  },
+                  "TextTransformations": [
+                    { "Priority": 0, "Type": "NONE" },
+                    { "Priority": 1, "Type": "JS_DECODE_EXT" }
+                  ]
+                }
+              },
+              {
+                "RegexMatchStatement": {
+                  "RegexString": "(?m)^def[ \\t]+[A-Za-z_]\\w*[ \\t]*\\([^)]*[=:][^)]*?(?:[A-Za-z_][\\w.]*|\\([ \\t]*[A-Za-z_][\\w.]*[ \\t]*\\))[ \\t\\r\\n]*\\([ \\t\\r\\n]*[^\\s)]",
+                  "FieldToMatch": {
+                    "JsonBody": {
+                      "MatchPattern": {
+                        "IncludedPaths": [
+                          "/code"
+                        ]
+                      },
+                      "MatchScope": "VALUE",
+                      "InvalidFallbackBehavior": "NO_MATCH",
+                      "OversizeHandling": "CONTINUE"
+                    }
+                  },
+                  "TextTransformations": [
+                    { "Priority": 0, "Type": "NONE" },
+                    { "Priority": 1, "Type": "JS_DECODE_EXT" }
+                  ]
+                }
+              },
+              {
+                "RegexMatchStatement": {
+                  "RegexString": "(?m)^def[ \\t]+[A-Za-z_]\\w*[ \\t]*\\([^)]*\\)[ \\t]*->[ \\t]*(?:[A-Za-z_][\\w.]*|\\(\\s*[A-Za-z_][\\w.]*\\s*\\))\\s*\\(\\s*[^\\s)]",
+                  "FieldToMatch": {
+                    "JsonBody": {
+                      "MatchPattern": {
+                        "IncludedPaths": [
+                          "/code"
+                        ]
+                      },
+                      "MatchScope": "VALUE",
+                      "InvalidFallbackBehavior": "NO_MATCH",
+                      "OversizeHandling": "CONTINUE"
+                    }
+                  },
+                  "TextTransformations": [
+                    { "Priority": 0, "Type": "NONE" },
+                    { "Priority": 1, "Type": "JS_DECODE_EXT" }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
