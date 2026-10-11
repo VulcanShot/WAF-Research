@@ -1,7 +1,7 @@
 {
   "Name": "block-<cve-id>-<short-anchor>",
   "Priority": 0,
-  "Action": { "Count": {} },
+  "Action": { "Block": {} },
   "VisibilityConfig": {
     "SampledRequestsEnabled": true,
     "CloudWatchMetricsEnabled": true,
@@ -30,8 +30,7 @@
               }
             },
             "TextTransformations": [
-              { "Priority": 0, "Type": "URL_DECODE" },
-              { "Priority": 1, "Type": "LOWERCASE" }
+              { "Priority": 0, "Type": "NONE" }
             ]
           }
         }

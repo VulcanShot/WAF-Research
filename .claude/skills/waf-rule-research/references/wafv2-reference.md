@@ -12,6 +12,7 @@ budget is tight.
 - [FieldToMatch — what you can inspect](#fieldtomatch--what-you-can-inspect)
 - [Text transformations](#text-transformations)
 - [Body inspection limits and OversizeHandling](#body-inspection-limits-and-oversizehandling)
+- [Matching and transformation gotchas](#matching-and-transformation-gotchas)
 - [Statement shapes](#statement-shapes)
 - [Worked examples](#worked-examples)
 - [Sources](#sources)
@@ -107,6 +108,55 @@ the trigger after enough padding evades every body/JSON-body statement.
 Choosing between `MATCH` and `NO_MATCH` is a precision-vs-coverage decision: on a
 managed ruleset, `MATCH` on a body statement can block any customer who posts a
 large legitimate payload, so it needs strong justification.
+
+## Matching and transformation gotchas
+
+Easy to get wrong, each one capable of a false positive or a silent miss.
+
+**Regex quantifiers — keep a match inside one token.** AWS WAF regex is RE2. On a
+raw `Body` scan an unbounded `.*` spans multiple JSON tokens, so a benign body
+that merely holds the right characters in unrelated places matches — a false
+positive that no AND of co-markers reliably saves you from. Bound the quantifier
+to the token you mean: `[^"]*` to stay inside one JSON string, or the
+escape-aware `(?:[^"\\]|\\.)*` when the string may contain `\"`. RE2's `.` does
+not cross a newline by default, but that is not the containment you want.
+`JsonBody` with a `MatchScope` gives token containment for free — the regex runs
+per key or per value, so it cannot bleed across the document the way a raw-body
+regex can.
+
+**MatchScope KEY vs VALUE is a precision lever and a coverage boundary.** When the
+invariant must appear in a JSON key, `MatchScope: KEY` cuts the false-positive
+surface sharply — benign traffic carries code-like or function-like strings in
+values far more often than in keys. The cost is a hard boundary: any exploit that
+delivers the same invariant in a value (a name passed as a parameter, a snippet
+in a string field) evades a key-scoped rule. Scope to KEY for the precision, and
+record the value-carried variant as a deliberate omission.
+
+**Transformations — apply only where they do real work, in decode→strip order.**
+
+- `JsonBody` is parsed before matching, so JSON escapes (`\uXXXX`, `\xHH`) are
+  already decoded; a `JS_DECODE` / `ESCAPE_SEQ_DECODE` there usually does nothing.
+  On a raw `Body` scan the bytes are not decoded, so those same transforms are
+  essential to see an escaped payload. Same invariant, opposite answer, depending
+  on the field.
+- `REPLACE_COMMENTS` removes `/* … */` block comments only; it does not touch `//`
+  line comments, which stay a live evasion of a `)\s*{`-style anchor.
+- Order them decode first (`JS_DECODE`, `ESCAPE_SEQ_DECODE`), then strip
+  (`REPLACE_COMMENTS`), then normalize whitespace (`COMPRESS_WHITE_SPACE`). Each is
+  +10 WCU.
+- A transform on a fixed-keyword byte match is often dead weight — you cannot
+  obfuscate an exact JSON key and still have the app read it as that key. And
+  never add a transform to defend a "bypass" you have not shown reaches the sink:
+  if the obfuscation breaks the exploit (a NUL in generated source, for example),
+  the transform defends nothing.
+
+**Transport the origin decodes but the WAF does not.** `JsonBody` only parses a
+body that is actually JSON — a payload uploaded as a multipart file part is not
+parsed, so a JSON-body rule misses it; cover attachments with a raw `Body` branch
+(bounded quantifiers, per the first point). Likewise, if the origin inflates
+`Content-Encoding: gzip` or decodes a non-UTF-8 charset, the WAF inspects the
+still-encoded bytes and the match never fires. Enumerate transports by what
+reaches the sink, then check each against what the WAF can actually read.
 
 ## Statement shapes
 

@@ -68,6 +68,15 @@ inspected window evades the rule regardless of how good the match is. Account fo
 body limits, encodings, and the text transformations WAF can apply before you
 claim an invariant is visible. The reference file covers these limits in detail.
 
+**Match the transport, not just the body.** `JsonBody` only parses a request
+whose body is actually JSON — a descriptor uploaded as a multipart file part, or
+anything the app reads from an attachment, slips past it, so cover those with a
+raw `Body` branch. The WAF also inspects the bytes on the wire: when the origin
+inflates `Content-Encoding: gzip` (many app stacks do by default) or decodes a
+non-UTF-8 charset, the WAF sees the still-encoded bytes and the match never
+fires. Enumerate every transport that reaches the sink and check which ones the
+WAF can actually read.
+
 **"No safe rule exists" is a valid conclusion.** Some vulnerabilities cannot be
 blocked at the WAF layer without either missing real exploits or blocking real
 traffic — for example, when the invariant only appears in a request shape that
@@ -90,6 +99,12 @@ the customer opts into, rate limiting, detection-only mode).
    `SingleHeader` / `Headers`, `Body`, `JsonBody`, `Method`, `AllQueryArguments`.
    Choosing the narrowest field that still sees the anchor keeps both WCU and the
    false-positive surface small. See the field-to-match guide in the reference.
+   For a structured field, `MatchScope` KEY vs VALUE is both a precision lever and
+   a coverage boundary: scoping to KEY cuts false positives sharply when the
+   invariant must appear in a key (benign traffic carries code-like strings in
+   values far more often than in keys), but any variant that delivers the same
+   invariant in a value then evades. Scope for the precision and record the
+   value-carried variant as an omission.
 
 3. **Choose the cheapest statement that matches precisely.** Byte match for a
    fixed string, size constraint for a length bound, regex (single pattern or a
@@ -117,6 +132,29 @@ the customer opts into, rate limiting, detection-only mode).
    chase). This is not a weakness in the deliverable; it is the deliverable being
    honest.
 
+## Validate before you trust it
+
+Reasoning in your head is not enough — a quantifier or a transformation that
+looks right routinely misses an exploit or blocks benign traffic. Prove the rule
+before you trust it:
+
+- **Simulate the match.** Re-implement each statement's field extraction, its text
+  transformations in `Priority` order, and its regex, then run that against a
+  small corpus of exploit shapes and adversarial benign shapes (legitimate
+  traffic that carries the same co-markers — a key named like your marker, or
+  parentheses and braces in a value). This is where cross-token regex false
+  positives and dead transformations surface. A `.*` that looked fine will match a
+  benign body that merely holds the right characters in the wrong places.
+- **Confirm each exploit reaches the sink.** A variant the app rejects before the
+  vulnerable code runs is not coverage you owe, and not a gap if the rule misses
+  it. Drive the corpus with an observable marker payload so it counts only
+  requests that actually execute. Several plausible "bypasses" — a NUL byte in
+  generated source, an encoding the parser rejects — never reach the sink at all,
+  and a transform added to defend one of those does no real work.
+- **Run the real component when you can.** Installing the vulnerable library and
+  firing the payload settles "is this variant even exploitable?" far better than
+  reasoning — it is how you tell a true blind spot from a dead end.
+
 ## Rule output format
 
 Deliver the rule as a single WAFv2 `Rule` JSON object (the element that goes
@@ -136,8 +174,10 @@ false-positive rate is proven; note which you are shipping and why.
 
 `references/wafv2-reference.md` — statement types and their WCU, the request
 components you can match (`FieldToMatch`), text transformations, body-inspection
-size limits and `OversizeHandling`, and two worked rule examples. Read it before
-writing the JSON; the WCU numbers and body limits are exact and easy to get wrong
-from memory.
+size limits and `OversizeHandling`, the matching and transformation gotchas
+(regex quantifier containment, KEY vs VALUE scope, transform order and what each
+one actually does, transport blind spots), and two worked rule examples. Read it
+before writing the JSON; the WCU numbers and body limits are exact and easy to
+get wrong from memory.
 
 `assets/rule-skeleton.json` — a minimal WAFv2 rule skeleton to be used as formatting reference.
