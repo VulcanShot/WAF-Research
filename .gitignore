@@ -1,11 +1,7 @@
-# NOTES
-*.txt
-*.pdf
-
-# REPOS
-protobufjs-2026-41242/CVE-2026-41242/
-
+##############################################################################
 # TERRAFORM
+#
+
 # Local .terraform directories
 .terraform/
 
@@ -43,6 +39,10 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+##############################################################################
+# Python
+#
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -268,5 +268,3 @@ __marimo__/
 # Optional: ignore plan files saved before destroying Terraform configuration
 # Uncomment the line below if you want to ignore planout files.
 # planout
-
-.claude/worktrees
