@@ -86,103 +86,33 @@ An endpoint guard could be implemneted to minimize false-positives, but this wou
 
 WCU: 68
 
-### Host Guard
+The rule is host guarded, as there are no endpoints to look for. There is an OR statement between the `JsonBody` and the attachment statements. Each one of them ANDs the `fields` key as well as the exploit itself.
 
-```json
-"ByteMatchStatement": {
-    "SearchString": "DEFAULT_HOST_GUARD",
-    "FieldToMatch": { "SingleHeader": { "Name": "host" } },
-    "TextTransformations": [
-        { "Priority": 0, "Type": "LOWERCASE" }
-    ],
-    "PositionalConstraint": "EXACTLY"
-}
-```
-
-### JSON Payload in body
-
-Check that both `fields` and the injection payload are present as JSON keys.
+### `JsonBody`
 
 - `InvalidFallbackBehavior: NO_MATCH` to prevent false positives, safe assuming the server does not accept invalid JSON.
 - `OversizeHandling: CONTINUE` to prevent false positives, safe assuming the server does not accept huge descriptors in a single request.
-- `TextTransformations: JS_DECODE, REPLACE_COMMENTS` to protect against bypasses using JS-specific tricks
+- `TextTransformations: JS_DECODE (in both), REPLACE_COMMENTS (only in exploit)` to protect against bypasses using JS-specific tricks
 
-```json
-"AndStatement": {
-    "Statements": [
-    {
-        "ByteMatchStatement": {
-        "SearchString": "fields",
-        "FieldToMatch": {
-            "JsonBody": {
-            "MatchPattern": { "All": {} },
-            "MatchScope": "KEY",
-            "InvalidFallbackBehavior": "NO_MATCH",
-            "OversizeHandling": "CONTINUE"
-            }
-        },
-        "TextTransformations": [
-            { "Priority": 0, "Type": "JS_DECODE" }
-        ],
-        "PositionalConstraint": "EXACTLY"
-        }
-    },
-    {
-        "RegexMatchStatement": {
-        "RegexString": "(?s)\\((?:[^\"\\\\]|\\\\.)*\\).*\\{(?:[^\"\\\\]|\\\\.)*\\}",
-        "FieldToMatch": { 
-            "JsonBody": {
-            "MatchPattern": { "All": {} },
-            "MatchScope": "KEY",
-            "InvalidFallbackBehavior": "NO_MATCH",
-            "OversizeHandling": "CONTINUE"
-            }
-        },
-        "TextTransformations": [
-            { "Priority": 0, "Type": "JS_DECODE" },
-            { "Priority": 1, "Type": "REPLACE_COMMENTS" }
-        ]
-        }
-    }
-    ]
-}
+```re
+(?s)\\((?:[^\"\\\\]|\\\\.)*\\).*\\{(?:[^\"\\\\]|\\\\.)*\\}
 ```
 
-### JSON Payload as attachment
+Detects the parameter list and the enclosing brackets.
 
-Same as above, except pretending the body is searched as any text.
+### Attachment
 
-```json
-"AndStatement": {
-    "Statements": [
-    {
-        "RegexMatchStatement": {
-        "RegexString": "\"fields\"\\s*:",
-        "FieldToMatch": { "Body": { "OversizeHandling": "CONTINUE" } },
-        "TextTransformations": [
-            { "Priority": 0, "Type": "JS_DECODE" }
-        ]
-        }
-    },
-    {
-        "RegexMatchStatement": {
-        "RegexString": "(?s)\"(?:[^\"\\\\]|\\\\.)*\\((?:[^\"\\\\]|\\\\.)*\\).*\\{(?:[^\"\\\\]|\\\\.)*\"\\s*:",
-        "FieldToMatch": { "Body": { "OversizeHandling": "CONTINUE" } },
-        "TextTransformations": [
-            { "Priority": 0, "Type": "JS_DECODE" },
-            { "Priority": 1, "Type": "REPLACE_COMMENTS" }
-        ]
-        }
-    }
-    ]
-}
+Same as above, except pretending the body is searched as plaintext rather than `JsonBody`.
+
+```re
+(?s)\"(?:[^\"\\\\]|\\\\.)*\\((?:[^\"\\\\]|\\\\.)*\\).*\\{(?:[^\"\\\\]|\\\\.)*\"\\s*:
 ```
 
 ## Validation Plan
 
 ```txt
        Send malicious/benign requests            =>        ALB with WAF rule         =>                     CVE Lab
-  `traffic-runner`project using traffic.yaml     =>    Managed rules switched off    =>    Adapted from github.com/Giangdurian/CVE-2026-41242
+  `traffic-runner` project using traffic.yaml     =>    Managed rules switched off    =>    Adapted from github.com/Giangdurian/CVE-2026-41242
 ```
 
 - It is impossible to cover all variants because each server will expect different endpoints/formats (see [Exploit Invariants](#exploit-invariants))
