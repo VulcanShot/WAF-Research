@@ -85,3 +85,11 @@ at once, use separate Terraform workspaces (`terraform workspace new <lab>`).
 - Changing `environment_variables` registers a new task definition revision and
   redeploys the service. `apply` returns before the new task passes health
   checks, so give it a minute or two.
+- `cpu_units` and `memory_mib` size the Fargate task, defaulting to 256 units
+  (a quarter vCPU) and 512 MiB. That suits a small single-process app; a heavier
+  image needs its own size, and an undersized task shows up as the container's
+  main process being SIGKILLed. Only certain pairs are legal — AWS rejects the
+  rest at apply with `No Fargate configuration exists for given values`.
+- `health_check_grace_period_seconds` holds the load balancer's health checks off
+  for a slow-booting app. Unset, a target is marked unhealthy roughly 60s after
+  it starts, which cycles the task before it finishes booting.
