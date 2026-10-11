@@ -124,7 +124,6 @@ Same as above, except pretending the body is searched as plaintext rather than `
 
 ## Results
 
-- Requests      : 15 (11 exploit, 4 benign)
 - Exploit block : 10/11 (91%) blocked
 - Benign pass   : 4/4 (100%) allowed
 
