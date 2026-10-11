@@ -53,6 +53,8 @@ The strongest anchors are the decorators, the default arguments, and annotations
 
 The anchors can be detected by a WAF, however if a blocklist it would be possible for attackers to find bypasses. Instead, all decorators, default arguments, and annotations that call functions are blocked. This does introduce a false-positive problem, which I assess is overweighted by the severity and EPSS of the vulnerability.
 
+Still, given the amount of features in Python, it may be possible to bypass the rules. Still, the vast majority of attacks will be blocked. For example, all payloads recorded by [TrendMicro](https://www.trendmicro.com/en_us/research/25/f/langflow-vulnerability-flodric-botnet.html) are.
+
 ## Rule
 
 WCU: 40
@@ -109,8 +111,9 @@ A top-level `def` with a `->` after the parameter close. The annotation must mak
 
 ## Results
 
-- Requests      : 21 (11 exploit, 10 benign)
-- Exploit block : 11/11 (100%) blocked
-- Benign pass   : 10/10 (100%) allowed
+- Exploit block : 14/14 (100%) blocked
+- Benign pass   : 6/9 (67%) allowed
+
+As expected, some FPs are unavoidable.
 
 Time to complete assignment: ~5 hours

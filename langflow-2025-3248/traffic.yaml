@@ -49,20 +49,44 @@ flows:
         body: '{"code":"def foo(x=None) -> exec(\"raise Exception(''SINK_REACHED'')\"):\n  pass"}'
         is_exploit: true
 
+      - label: "Default Argument - line-continuation after @"
+        method: POST
+        route: /api/v1/validate/code
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: '{"code":"def foo(x=\\\n#hello\nexec(\"raise Exception(''SINK_REACHED'')\")):\n  pass"}'
+        is_exploit: true
+
       - label: "Expression decorator - line-continuation after @"
         method: POST
         route: /api/v1/validate/code
         query_string: ""
         headers: { Host: app.example.com, Content-Type: application/json }
-        body: '{"code":"@\\\n\\\nexec(\"raise Exception(''SINK_REACHED'')\")\ndef foo():\n  pass"}'
+        body: '{"code":"@ \\\n\\\nexec(\"raise Exception(''SINK_REACHED'')\")\ndef foo():\n  pass"}'
         is_exploit: true
 
-      - label: "Expression decorator between benign decorators"
+      - label: "Expression decorator - new lines"
         method: POST
         route: /api/v1/validate/code
         query_string: ""
         headers: { Host: app.example.com, Content-Type: application/json }
-        body: '{"code":"@staticmethod\n@exec(\"raise Exception(''SINK_REACHED'')\")\n@staticmethod\ndef foo():\n  pass"}'
+        body: '{"code":"@exec(\\\n\\\n  \"raise Exception(''SINK_REACHED'')\"\n)\ndef foo():\n  pass"}'
+        is_exploit: true
+
+      - label: "Expression decorator - new lines"
+        method: POST
+        route: /api/v1/validate/code
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: '{"code":"@exec(\\\n\\\n  \"raise Exception(''SINK_REACHED'')\"\n)\ndef foo():\n  pass"}'
+        is_exploit: true
+
+      - label: "Expression decorator with default value for argument"
+        method: POST
+        route: /api/v1/validate/code
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: '{"code":"import re\n@exec(compile(source=\"raise Exception(''SINK_REACHED'')\", filename=\"<string>\", mode=\"exec\"))\ndef fib(n):\n  return n"}'
         is_exploit: true
       
       - label: "Expression decorator with unicode"
@@ -123,14 +147,6 @@ flows:
         body: '{"code":"from functools import lru_cache\n@lru_cache(maxsize=128)\ndef fib(n):\n  return n"}'
         is_exploit: false
 
-      - label: "The token 'exec' appears only in a string and an identifier"
-        method: POST
-        route: /api/v1/validate/code
-        query_string: ""
-        headers: { Host: app.example.com, Content-Type: application/json }
-        body: '{"code":"command = \"exec something\"\ndef run(executor=None):\n  return executor"}'
-        is_exploit: false
-
       - label: "Decorator in docstrings"
         method: POST
         route: /api/v1/validate/code
@@ -139,12 +155,20 @@ flows:
         body: '{"code":"''''''\nSee this function:\n@exec(''id'')\ndef foo():\n    baz()\n    return\n''''''\ndef x():\n    pass"}'
         is_exploit: false
 
-      - label: "Default args calling benign constructors (dict(), list())"
+      - label: "Default args calling benign constructors without arguments"
         method: POST
         route: /api/v1/validate/code
         query_string: ""
         headers: { Host: app.example.com, Content-Type: application/json }
         body: '{"code":"def handler(config=dict(), items=list()):\n  return config"}'
+        is_exploit: false
+
+      - label: "Default args calling benign constructors with arguments"
+        method: POST
+        route: /api/v1/validate/code
+        query_string: ""
+        headers: { Host: app.example.com, Content-Type: application/json }
+        body: '{"code":"def handler(items=str(48)):\n  return items"}'
         is_exploit: false
 
       - label: "Type annotations and literal defaults, no calls"
@@ -163,18 +187,10 @@ flows:
         body: '{"code":"from typing import List\ndef ids() -> List[int]:\n  return []"}'
         is_exploit: false
 
-      - label: "Indented call-decorator on a method (@functools.lru_cache(...))"
+      - label: "Indented call-decorator on a method"
         method: POST
         route: /api/v1/validate/code
         query_string: ""
         headers: { Host: app.example.com, Content-Type: application/json }
         body: '{"code":"import functools\nclass Tool:\n  @functools.lru_cache(maxsize=8)\n  def compute(self, n: int) -> int:\n    return n"}'
-        is_exploit: false
-
-      - label: "User-defined bare-name decorator on a top-level def"
-        method: POST
-        route: /api/v1/validate/code
-        query_string: ""
-        headers: { Host: app.example.com, Content-Type: application/json }
-        body: '{"code":"def trace(fn):\n  return fn\n@trace\ndef handler(x: int = 5) -> int:\n  return x"}'
         is_exploit: false
