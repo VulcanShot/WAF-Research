@@ -47,7 +47,7 @@
             "Statements": [
               {
                 "RegexMatchStatement": {
-                  "RegexString": "(?m)(?:^|\\\\n)@(?:\\\\\\n|[^\\n])*\\(",
+                  "RegexString": "(?:^|\\\\n)@(?:\\\\\\n|[^\\n])*\\(",
                   "FieldToMatch": {
                     "JsonBody": {
                       "MatchPattern": {
@@ -62,14 +62,13 @@
                   },
                   "TextTransformations": [
                     { "Priority": 0, "Type": "NONE" },
-                    { "Priority": 1, "Type": "JS_DECODE_EXT" },
-                    { "Priority": 2, "Type": "JS_DECODE" }
+                    { "Priority": 1, "Type": "JS_DECODE_EXT" }
                   ]
                 }
               },
               {
                 "RegexMatchStatement": {
-                  "RegexString": "(?m)(?:^|\\\\n)def(?:\\\\\\n|[ \\t])+[A-Za-z_]\\w*(?:\\\\\\n|[ \\t])*\\([^)]*[=:][^)]*?(?:[A-Za-z_][\\w.]*|\\((?:\\\\\\n|[ \\t])*[A-Za-z_][\\w.]*(?:\\\\\\n|[ \\t])*\\))(?:\\\\\\n|[ \\t\\r\\n])*\\((?:\\\\\\n|[\\t\\r\\n])*[^\\s)]",
+                  "RegexString": "(?:^|\\\\n)def(?:\\\\\\n|[ \\t])+[A-Za-z_]\\w*(?:\\\\\\n|[ \\t])*\\([^)]*[=:][^)]*?(?:[A-Za-z_][\\w.]*|\\((?:\\\\\\n|[ \\t])*[A-Za-z_][\\w.]*(?:\\\\\\n|[ \\t])*\\))(?:\\\\\\n|[ \\t\\r\\n])*\\((?:\\\\\\n|[\\t\\r\\n])*[^\\s)]",
                   "FieldToMatch": {
                     "JsonBody": {
                       "MatchPattern": {
@@ -84,14 +83,13 @@
                   },
                   "TextTransformations": [
                     { "Priority": 0, "Type": "NONE" },
-                    { "Priority": 1, "Type": "JS_DECODE_EXT" },
-                    { "Priority": 2, "Type": "JS_DECODE" }
+                    { "Priority": 1, "Type": "JS_DECODE_EXT" }
                   ]
                 }
               },
               {
                 "RegexMatchStatement": {
-                  "RegexString": "(?m)(?:^|\\\\n)def(?:\\\\\\n|[ \\t])+[A-Za-z_]\\w*(?:\\\\\\n|[ \\t])*\\([^)]*\\)(?:\\\\\\n|[ \\t])*->(?:\\\\\\n|[ \\t])*(?:[A-Za-z_][\\w.]*|\\((?:\\\\\\n|[ \\t])*[A-Za-z_][\\w.]*(?:\\\\\\n|[ \\t])*\\))(?:\\\\\\n|[\\t])*\\((?:\\\\\\n|[ \\t])*[^\\s)]",
+                  "RegexString": "(?:^|\\\\n)def(?:\\\\\\n|[ \\t])+[A-Za-z_]\\w*(?:\\\\\\n|[ \\t])*\\([^)]*\\)(?:\\\\\\n|[ \\t])*->(?:\\\\\\n|[ \\t])*(?:[A-Za-z_][\\w.]*|\\((?:\\\\\\n|[ \\t])*[A-Za-z_][\\w.]*(?:\\\\\\n|[ \\t])*\\))(?:\\\\\\n|[\\t])*\\((?:\\\\\\n|[ \\t])*[^\\s)]",
                   "FieldToMatch": {
                     "JsonBody": {
                       "MatchPattern": {
@@ -106,8 +104,7 @@
                   },
                   "TextTransformations": [
                     { "Priority": 0, "Type": "NONE" },
-                    { "Priority": 1, "Type": "JS_DECODE_EXT" },
-                    { "Priority": 2, "Type": "JS_DECODE" }
+                    { "Priority": 1, "Type": "JS_DECODE_EXT" }
                   ]
                 }
               }
