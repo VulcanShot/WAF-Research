@@ -111,9 +111,9 @@ A top-level `def` with a `->` after the parameter close. The annotation must mak
 
 ## Results
 
-- Exploit block : 14/14 (100%) blocked
-- Benign pass   : 6/9 (67%) allowed
+- Exploit block : 15/15 (100%) blocked
+- Benign pass   : 6/11 (55%) allowed
 
-As expected, some FPs are unavoidable.
+As expected, some FPs are unavoidable. These are all the benign decorators, annotations, and default arguemnts that make calls to any function. Further, it would be hard and risky to try and identify if they are inside a multiline comment, so in those cases they are also blocked. Again, due to the likelihood and severity of the vulnerability I believe this is justifiable until the server is patched.
 
 Time to complete assignment: ~5 hours
